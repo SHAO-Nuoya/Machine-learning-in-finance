@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 21:18:14
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-16 01:51:49
+LastEditTime: 2022-03-16 19:02:58
 '''
 
 from numpy import exp, sqrt
@@ -242,7 +242,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     VS = MultipleVasicek()
 
-    ts = np.linspace(0, 1, VS.T)
+    ts = np.linspace(0, 1, VS.T)[1:-1]
 
     rts = VS.generate_rt(ts)
     rts1 = rts[:, 0]

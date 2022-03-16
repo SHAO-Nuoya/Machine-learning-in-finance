@@ -4,19 +4,20 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:19:40
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-16 16:21:40
+LastEditTime: 2022-03-16 21:16:42
 '''
 from single_vasicek import SingleVasicek
 from multiple_vasicek import MultipleVasicek
 from calibration import SingleCalibrate, MultipleCalibrate
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 #***********************Prediction**************************
 def single_curve_prediction():
     VS = SingleVasicek()
 
-    ts = np.linspace(0, 1, VS.T)
+    ts = np.linspace(0, 1, VS.T)[1:-1]
     ts_test = np.linspace(0, 1, VS.T // 2)
 
     rts = VS.generate_rt(ts)
@@ -56,4 +57,7 @@ def calibrate(curve='single', method='CG'):
             para = Calibration.adam_minimize()
     print(para)
 
+start = time.time()
 calibrate()
+end = time.time()
+print("Time used : ", end-start)

@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 16:11:50
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-16 16:22:16
+LastEditTime: 2022-03-16 18:56:44
 '''
 from numpy import exp
 import numpy as np
@@ -88,7 +88,7 @@ class SingleVasicek:
         Bt = self.B(t)
 
         term1 = exp(-k * (s + t))
-        term2 = (exp(2 * k * min(s, t)) - 1)
+        term2 = exp(2 * k * min(s, t)) - 1
 
         return Bs * Bt * sigma**2 / (2 * k) * term1 * term2
 
@@ -106,9 +106,9 @@ class SingleVasicek:
         for i, s in enumerate(Ss):
             for j, t in enumerate(Ts):
                 res[i, j] = self.c(s, t) + sigma_hat * (i == j)
+
         return res
 
 
 if __name__ == "__main__":
     pass
-    
