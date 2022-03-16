@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 16:11:50
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-14 21:14:34
+LastEditTime: 2022-03-16 00:37:10
 '''
 from numpy import exp
 import numpy as np
@@ -12,11 +12,10 @@ import numpy as np
 
 class SingleVasicek:
     def __init__(self, r0=0.5, k=2, theta=0.1, sigma=0.2, T=252) -> None:
-        """_summary_
+        """
         Args:
             r0 (float, optional): initial interest rate. Defaults to 0.5.
-            T (float, optional): maturity. Defaults to 1.
-            N (int, optional): time step. Defaults to 200.
+            T (float, optional): maturity. Defaults to 252 days.
         """
         self.r0 = r0
         self.k = k
@@ -24,7 +23,13 @@ class SingleVasicek:
         self.sigma = sigma
         self.T = T
 
-    def generate_rt(self, ts):
+    def generate_rt(self, ts) -> list[float]:
+        """
+        Args:
+            ts (list[float]): time list (unit is year)
+        Returns:
+            list: list of interest rate for every day
+        """
         k, theta, sigma, r0 = self.k, self.theta, self.sigma, self.r0
         res = [r0]
         dt = (ts[-1] - ts[0]) / len(ts)
@@ -36,44 +41,71 @@ class SingleVasicek:
 
         return res
 
-    def Log_Pt(self, t, rt):
+    def A(self, t):
         k, theta, sigma = self.k, self.theta, self.sigma
         tau = 1 - t
-        A = theta / k * (exp(-k * tau) + k * tau - 1) + sigma**2 / (
+        res = theta / k * (exp(-k * tau) + k * tau - 1) + sigma**2 / (
             4 * k**3) * (exp(-2 * k * tau) - 4 * exp(-k * tau) - 2 * k * tau +
                          3)
-        B = (1 - exp(-k * tau)) / k
-        return -A - B * rt
+        return res
 
+    def B(self, t):
+        tau = 1 - t
+        res = (1 - exp(-self.k * tau)) / self.k
+        return res
+
+    def Log_Pt(self, rts):
+        """
+        Args:
+            rts (list[float]): interest rate list
+
+        Returns:
+            float: log bond price
+        """
+        res = []
+        for i, rt in enumerate(rts):
+            t = i / len(rts)
+            res.append(-self.A(t) - self.B(t) * rt)
+        return np.array(res).reshape(-1, 1)
+
+    # todo 是否需要更新rs ?
     def mu_knowing_s(self, t, s):
         pass
 
-    def mu(self, t):
+    def mu(self, ts):
         """expectation of log P(t, T)"""
-        k, theta, sigma, r0 = self.k, self.theta, self.sigma, self.r0
-        tau = 1 - t
-        A = theta * (exp(-k * tau) + k * tau - 1) / k + sigma**2 * (exp(
-            -2 * k * tau) - 4 * exp(-k * tau) - 2 * k * tau + 3) / (4 * k**3)
-        B = (1 - exp(-k * tau)) / k
-        return -A - B * (r0 * exp(-k * t) + theta * (1 - exp(-k * t)))
+        res = []
+        for t in ts:
+            re = -self.A(t) - self.B(t) * (self.r0 * exp(-self.k * t) +
+                                           self.theta * (1 - exp(-self.k * t)))
+            res.append(re)
+        return np.array(res).reshape(-1, 1)
 
     def c(self, s, t):
         """covariance function"""
         k, sigma = self.k, self.sigma
-        Bs = (1 - exp(-k * (1 - s))) / k
-        Bt = (1 - exp(-k * (1 - t))) / k
+        Bs = self.B(s)
+        Bt = self.B(t)
 
-        a = exp(-k * (s + t))
-        b = (exp(2 * k * min(s, t)) - 1)
+        term1 = exp(-k * (s + t))
+        term2 = (exp(2 * k * min(s, t)) - 1)
 
-        return Bs * Bt * sigma**2 / (2 * k) * exp(
-            -k * (s + t)) * (exp(2 * k * min(s, t)) - 1)
+        return Bs * Bt * sigma**2 / (2 * k) * term1 * term2
 
-    def Sigma(self, sigma_hat):
-        res = np.zeros((self.T, self.T))
-        for i in self.T:
-            for j in self.T:
-                res[i, j] = self.c(i, j) + sigma_hat**2 * (i == j)
+    def Sigma(self, Ss, Ts, sigma_hat=0):
+        """
+        Args:
+            Ss (_type_): time list1
+            Ts (_type_): time list2
+            sigma_hat (int, optional): empirical variance. Defaults to 0.
+
+        Returns:
+            np.array: 
+        """
+        res = np.zeros((len(Ss), len(Ts)))
+        for i, s in enumerate(Ss):
+            for j, t in enumerate(Ts):
+                res[i, j] = self.c(s, t) + sigma_hat * (i == j)
         return res
 
 
@@ -84,35 +116,22 @@ if __name__ == "__main__":
     ts = np.linspace(0, 1, VS.T)
     ts_test = np.linspace(0, 1, VS.T // 2)
 
-    SigmaY_Y = np.zeros((len(ts_test), len(ts)))
-    SigmaYY_ = np.zeros((len(ts), len(ts_test)))
-    SigmaY_Y_ = np.zeros((len(ts_test), len(ts_test)))
-    SigmaYY = np.zeros((len(ts), len(ts)))
-
     rts = VS.generate_rt(ts)
-    y = np.array([VS.Log_Pt(i / len(rts), rt)
-                  for i, rt in enumerate(rts)]).reshape(-1, 1)
+    y = VS.Log_Pt(rts)
 
-    MuY_ = np.array([VS.mu(s) for s in ts_test]).reshape(-1, 1)
-    MuY = np.array([VS.mu(t) for t in ts]).reshape(-1, 1)
+    MuY_ = VS.mu(ts_test)
+    MuY = VS.mu(ts)
 
-    for i, s in enumerate(ts_test):
-        for j, t in enumerate(ts):
-            SigmaY_Y[i, j] = VS.c(s, t)
-            SigmaYY_[j, i] = VS.c(t, s)
-
-    for i, si in enumerate(ts_test):
-        for j, sj in enumerate(ts_test):
-            SigmaY_Y_[i, j] = VS.c(si, sj)
-
-    for i, ti in enumerate(ts):
-        for j, tj in enumerate(ts):
-            SigmaYY[i, j] = VS.c(ti, tj) + np.var(y) * (i == j)
+    SigmaY_Y = VS.Sigma(ts_test, ts)
+    SigmaYY_ = VS.Sigma(ts, ts_test)
+    SigmaY_Y_ = VS.Sigma(ts_test, ts_test)
+    SigmaYY = VS.Sigma(ts, ts, np.var(y))
 
     mu_ = MuY_ + SigmaY_Y @ np.linalg.inv(SigmaYY) @ (y - MuY)
+    Sigma_ = SigmaY_Y_ - SigmaY_Y @ np.linalg.inv(SigmaYY) @ SigmaYY_
 
     plt.scatter(ts, y, s=20, label='observation')
     plt.plot(ts_test, mu_, color='red', label='prediction')
     plt.legend()
-    plt.savefig('Single.png')
+    #plt.savefig('Single.png')
     plt.show()
