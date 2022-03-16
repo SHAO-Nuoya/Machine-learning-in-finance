@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:03:06
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-16 01:50:37
+LastEditTime: 2022-03-16 16:16:28
 '''
 import tensorflow as tf
 from scipy.optimize import minimize
@@ -13,72 +13,79 @@ from multiple_vasicek import MultipleVasicek
 import numpy as np
 
 
-class single_calibrate:
+class SingleCalibrate:
     def __init__(self) -> None:
         pass
 
-    def marginal_liklihood(self, r0, k, theta, sigma):
-        pass
+    def marginal_liklihood(self, para):
+        r0, k, theta, sigma = para
+        VS = SingleVasicek(r0, k, theta, sigma)
+        ts = np.linspace(0, 1, VS.T)
 
-    def jac_marginal_liklihood(self, r0, k, theta, sigma):
-        pass
+        rts = VS.generate_rt(ts)
+
+        y = VS.Log_Pt(rts)
+        mu_y = VS.mu(ts)
+
+        Sigma_yy = VS.Sigma(ts, ts, np.var(y))
+
+        res = -(y - mu_y).T @ np.linalg.inv(Sigma_yy) @ (y - mu_y) / 2
+        return res.ravel()
 
     def CG_minimize(self):
-        para0 = [0.0, 0.0, 0.0, 0.0]
+        para = [0.1, 0.1, 0.1, 0.1]
         res = minimize(self.marginal_liklihood,
-                       para0,
+                       para,
                        method='CG',
-                       jac=self.jac_marginal_liklihood,
                        options={'disp': True})
 
     def adam_minimize(self):
         opt = tf.keras.optimizers.Adam(learning_rate=0.1)
-        r0 = tf.Variable(0.0)
-        k = tf.Variable(0.0)
-        theta = tf.Variable(0.0)
-        sigma = tf.Variable(0.0)
+        r0 = tf.Variable(0.1)
+        k = tf.Variable(0.1)
+        theta = tf.Variable(0.1)
+        sigma = tf.Variable(0.1)
 
-        step_count = opt.minimize(self.marginal_liklihood,
-                                  [r0, k, theta, sigma]).numpy()
+        para = [r0, k, theta, sigma]
+        step_count = opt.minimize(self.marginal_liklihood(para), para).numpy()
 
         return [r0.numpy(), k.numpy(), theta.numpy(), sigma.numpy()]
 
 
-#*************************Multiple curve calibration*************************8*
-def multi_marginal_liklihood(para):
-    r01, k1, theta1, sigma1, r02, k2, theta2, sigma2 = para
-    VS = MultipleVasicek()
-    ts = np.linspace(0, 1, VS.T)
-
-    rts = VS.generate_rt(ts)
-    rts0 = rts[:, 0]
-
-    VS = MultipleVasicek(r01, k1, theta1, sigma1, r02, k2, theta2, sigma2)
-    y_delta = VS.Log_Pt_delta(rts)
-    y0 = VS.Log_Pt(rts0)
-
-    y = np.vstack((y0, y_delta))
-    mu_y = np.vstack((VS.mu0(ts), VS.mu_delta(ts)))
-
-    Sigma_y00 = VS.Sigma(ts, ts, np.var(y0))
-    Sigma_ydd = VS.Sigma(ts, ts, np.var(y_delta), delta=True)
-    Sigma_y0d = VS.Sigma0_delta(ts)
-    Sigma_yd0 = VS.Sigmadelta_0(ts)
-    Sigma_y_upper = np.hstack((Sigma_y00, Sigma_y0d))
-    Sigma_y_lower = np.hstack((Sigma_yd0, Sigma_ydd))
-    Sigma_y = np.vstack((Sigma_y_upper, Sigma_y_lower))
-
-    res = -(y - mu_y).T @ np.linalg.inv(Sigma_y) @ (y - mu_y) / 2
-    return res.ravel()
-
-class multiple_calibrate:
+#*************************Multiple curve calibration***************************
+class MultipleCalibrate:
     def __init__(self) -> None:
         pass
+    
+    def marginal_liklihood(self, para):
+        r01, k1, theta1, sigma1, r02, k2, theta2, sigma2 = para
+        VS = MultipleVasicek(r01, k1, theta1, sigma1, r02, k2, theta2, sigma2)
+
+        ts = np.linspace(0, 1, VS.T)
+        rts = VS.generate_rt(ts)
+        rts0 = rts[:, 0]
+
+        y_delta = VS.Log_Pt_delta(rts)
+        y0 = VS.Log_Pt(rts0)
+
+        y = np.vstack((y0, y_delta))
+        mu_y = np.vstack((VS.mu0(ts), VS.mu_delta(ts)))
+
+        Sigma_y00 = VS.Sigma(ts, ts, np.var(y0))
+        Sigma_ydd = VS.Sigma(ts, ts, np.var(y_delta), delta=True)
+        Sigma_y0d = VS.Sigma0_delta(ts)
+        Sigma_yd0 = VS.Sigmadelta_0(ts)
+        Sigma_y_upper = np.hstack((Sigma_y00, Sigma_y0d))
+        Sigma_y_lower = np.hstack((Sigma_yd0, Sigma_ydd))
+        Sigma_y = np.vstack((Sigma_y_upper, Sigma_y_lower))
+
+        res = -(y - mu_y).T @ np.linalg.inv(Sigma_y) @ (y - mu_y) / 2
+        return res.ravel()
 
     def CG_minimize(self):
-        para0 = [0 for _ in range(8)]
+        para0 = [0.1 for _ in range(8)]
         res = minimize(
-            multi_marginal_liklihood,
+            self.marginal_liklihood,
             para0,
             method='CG',
             #jac=self.jac_marginal_liklihood,
@@ -86,17 +93,17 @@ class multiple_calibrate:
 
     def adam_minimize(self):
         opt = tf.keras.optimizers.Adam(learning_rate=0.1)
-        r01 = tf.Variable(0.0)
-        k1 = tf.Variable(0.0)
-        theta1 = tf.Variable(0.0)
-        sigma1 = tf.Variable(0.0)
-        r02 = tf.Variable(0.0)
-        k2 = tf.Variable(0.0)
-        theta2 = tf.Variable(0.0)
-        sigma2 = tf.Variable(0.0)
-        
+        r01 = tf.Variable(0.1)
+        k1 = tf.Variable(0.1)
+        theta1 = tf.Variable(0.1)
+        sigma1 = tf.Variable(0.1)
+        r02 = tf.Variable(0.1)
+        k2 = tf.Variable(0.1)
+        theta2 = tf.Variable(0.1)
+        sigma2 = tf.Variable(0.1)
+
         para = [r01, k1, theta1, sigma1, r02, k2, theta2, sigma2]
-        step_count = opt.minimize(lambda:multi_marginal_liklihood(para), para).numpy()
+        step_count = opt.minimize(lambda: self.marginal_liklihood(para), para)
 
         print(step_count)
         return [
@@ -112,6 +119,4 @@ class multiple_calibrate:
 
 
 if __name__ == "__main__":
-    Cali = multiple_calibrate()
-    para = Cali.adam_minimize()
-    print(para)
+    pass

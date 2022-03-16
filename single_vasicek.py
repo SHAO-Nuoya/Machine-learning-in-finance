@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 16:11:50
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-16 00:37:10
+LastEditTime: 2022-03-16 16:22:16
 '''
 from numpy import exp
 import numpy as np
@@ -110,28 +110,5 @@ class SingleVasicek:
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    VS = SingleVasicek()
-
-    ts = np.linspace(0, 1, VS.T)
-    ts_test = np.linspace(0, 1, VS.T // 2)
-
-    rts = VS.generate_rt(ts)
-    y = VS.Log_Pt(rts)
-
-    MuY_ = VS.mu(ts_test)
-    MuY = VS.mu(ts)
-
-    SigmaY_Y = VS.Sigma(ts_test, ts)
-    SigmaYY_ = VS.Sigma(ts, ts_test)
-    SigmaY_Y_ = VS.Sigma(ts_test, ts_test)
-    SigmaYY = VS.Sigma(ts, ts, np.var(y))
-
-    mu_ = MuY_ + SigmaY_Y @ np.linalg.inv(SigmaYY) @ (y - MuY)
-    Sigma_ = SigmaY_Y_ - SigmaY_Y @ np.linalg.inv(SigmaYY) @ SigmaYY_
-
-    plt.scatter(ts, y, s=20, label='observation')
-    plt.plot(ts_test, mu_, color='red', label='prediction')
-    plt.legend()
-    #plt.savefig('Single.png')
-    plt.show()
+    pass
+    
