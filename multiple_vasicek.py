@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 21:18:14
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-16 19:02:58
+LastEditTime: 2022-03-17 01:15:53
 '''
 
 from numpy import exp, sqrt
@@ -22,10 +22,10 @@ class MultipleVasicek:
                  theta2=0.03,
                  sigma2=0.8,
                  rho=0.2,
-                 T=252) -> None:
+                 T=127) -> None:
         """
         Args:
-            T (float, optional): maturity. Defaults to 252 days.
+            T (float, optional): maturity. Defaults to 127 days.
         """
         self.r01 = r01
         self.k1 = k1
