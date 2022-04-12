@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:19:40
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-11 01:08:18
+LastEditTime: 2022-04-12 00:02:36
 '''
 from single_vasicek import SingleVasicek
 from multiple_vasicek import MultipleVasicek
@@ -20,8 +20,8 @@ def single_curve_prediction(CI=0.95):
     VS = SingleVasicek()
 
     ts = np.linspace(0, 1, VS.T)[1:-1]
-    observation_index = range(0, len(ts) // 2, 20)
-    prediction_index = range(len(ts) // 2, len(ts), 20)
+    observation_index = []
+    prediction_index = range(len(ts))
 
     ts_observation = ts[observation_index]
     ts_prediction = ts[prediction_index]
@@ -47,7 +47,7 @@ def single_curve_prediction(CI=0.95):
     plt.plot(ts, log_Pt, label='log bond price')
     plt.scatter(ts_observation,
                 log_Pt_observation,
-                s=10,
+                s=15,
                 color='red',
                 label='observations')
     plt.plot(ts_prediction, mu_, color='orange', label='predictions')
@@ -72,7 +72,7 @@ def single_curve_prediction(CI=0.95):
                      alpha=0.25,
                      label='95% CI')
     plt.legend()
-    # plt.savefig('Single.png')
+    plt.savefig('Single3.png')
     plt.show()
 
 
@@ -94,12 +94,12 @@ def calibrate(curve='single', method='CG'):
 
 
 if __name__ == '__main__':
-    single_curve_prediction()
+    # single_curve_prediction()
 
-    # start = time.time()
-    # calibrate(curve='single')
-    # end = time.time()
-    # print("Time used : ", end - start)
+    start = time.time()
+    calibrate(curve='single')
+    end = time.time()
+    print("Time used : ", end - start)
 
     # # start = time.time()
     # # calibrate(curve='multiple')

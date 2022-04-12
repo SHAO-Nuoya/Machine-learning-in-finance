@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:03:06
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-03-16 21:17:50
+LastEditTime: 2022-04-12 00:01:52
 '''
 import tensorflow as tf
 from scipy.optimize import minimize
@@ -16,19 +16,18 @@ import numpy as np
 class SingleCalibrate:
     def __init__(self) -> None:
         simulated_VS = SingleVasicek(r0=0.5, k=2, theta=0.1, sigma=0.2)
-        ts = np.linspace(0, 1, simulated_VS.T)[1:-1]
-        rts = simulated_VS.generate_rt(ts)
-        self.y = simulated_VS.Log_Pt(rts)
+        self.ts = np.linspace(0, 1, simulated_VS.T)[1:-1]
+        rs = simulated_VS.generate_rt(self.ts)
+        self.y = simulated_VS.Log_Pt(rs)
 
     def minus_marginal_liklihood(self, para):
         r0, k, theta, sigma = para
         VS = SingleVasicek(r0, k, theta, sigma)
-        ts = np.linspace(0, 1, VS.T)[1:-1]
 
-        mu_y = VS.mu(ts)
-        Sigma_yy = VS.Sigma(ts, ts)
+        mu_y = VS.mu(self.ts)
+        SigmaYY = VS.Sigma(self.ts, self.ts)
 
-        res = -(self.y - mu_y).T @ np.linalg.inv(Sigma_yy) @ (self.y -
+        res = -(self.y - mu_y).T @ np.linalg.inv(SigmaYY) @ (self.y -
                                                               mu_y) / 2
         return -res.ravel()
 
