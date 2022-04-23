@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 16:11:50
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-10 23:47:12
+LastEditTime: 2022-04-23 14:14:24
 '''
 from numpy import exp
 import numpy as np
@@ -33,7 +33,7 @@ class SingleVasicek:
         k, theta, sigma, r0 = self.k, self.theta, self.sigma, self.r0
         res = [r0]
         dt = (ts[-1] - ts[0]) / (len(ts)-1)
-        for _ in range(len(ts)+1):
+        for _ in range(1, len(ts)):
             r_pre = res[-1]
             r_new = r_pre + k * (
                 theta - r_pre) * dt + sigma * np.random.normal(0, np.sqrt(dt))

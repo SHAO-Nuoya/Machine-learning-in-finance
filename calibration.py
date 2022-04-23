@@ -4,10 +4,10 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:03:06
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-12 00:01:52
+LastEditTime: 2022-04-23 16:39:30
 '''
 import tensorflow as tf
-from scipy.optimize import minimize
+from scipy.optimize import minimize, shgo
 from single_vasicek import SingleVasicek
 from multiple_vasicek import MultipleVasicek
 import numpy as np
@@ -16,20 +16,53 @@ import numpy as np
 class SingleCalibrate:
     def __init__(self) -> None:
         simulated_VS = SingleVasicek(r0=0.5, k=2, theta=0.1, sigma=0.2)
-        self.ts = np.linspace(0, 1, simulated_VS.T+1)[1:-1]
+        self.ts = np.linspace(0, 1, simulated_VS.T + 1)[1:-1]
         rs = simulated_VS.generate_rt(self.ts)
         self.y = simulated_VS.Log_Pt(rs)
+        self.iter = 0
 
     def minus_marginal_liklihood(self, para):
+        self.iter += 1
         r0, k, theta, sigma = para
         VS = SingleVasicek(r0, k, theta, sigma)
 
         mu_y = VS.mu(self.ts)
         SigmaYY = VS.Sigma(self.ts, self.ts)
 
-        res = -(self.y - mu_y).T @ np.linalg.inv(SigmaYY) @ (self.y -
-                                                              mu_y) / 2
-        return -res.ravel()
+        res = -(self.y - mu_y).T @ np.linalg.inv(SigmaYY) @ (self.y - mu_y) / 2
+        res = -res[0][0]
+        print(
+            f"{self.iter}\t{para[0]:.8f}\t{para[1]:.8f}\t{para[2]:.8f}\t{para[3]:.8f}\t{res:.8f}"
+        )
+        return res
+
+    def Global_minimize(self):
+        bounds = [(0, 1), (1, 3), (0, 1), (0, 0.1)]
+        epsilon = 0.1
+        cons = (
+            {
+                'type': 'ineq',
+                'fun': lambda x: x[0] - epsilon
+            },
+            {
+                'type': 'ineq',
+                'fun': lambda x: x[1] - epsilon
+            },
+            {
+                'type': 'ineq',
+                'fun': lambda x: x[2] - epsilon
+            },
+            {
+                'type': 'ineq',
+                'fun': lambda x: x[3] - epsilon
+            },
+        )
+        res = shgo(self.minus_marginal_liklihood,
+                   bounds=bounds,
+                   options={'disp': True},
+                   n=10,
+                   constraints=cons)
+        return res
 
     def CG_minimize(self):
         para = [0.5 for _ in range(4)]
@@ -70,8 +103,11 @@ class MultipleCalibrate:
 
         self.y_delta = simulated_VS.Log_Pt_delta(rts)
         self.y0 = simulated_VS.Log_Pt(rts0)
+        self.iter = 0
 
     def minus_marginal_liklihood(self, para):
+        self.iter += 1
+
         r01, k1, theta1, sigma1, r02, k2, theta2, sigma2 = para
         VS = MultipleVasicek(r01, k1, theta1, sigma1, r02, k2, theta2, sigma2)
 
@@ -88,7 +124,11 @@ class MultipleCalibrate:
         Sigma_y = np.vstack((Sigma_y_upper, Sigma_y_lower))
 
         res = -(y - mu_y).T @ np.linalg.inv(Sigma_y) @ (y - mu_y) / 2
-        return -res.ravel()
+        res = -res[0][0]
+        print(
+            f"{self.iter}\t{para[0]:.8f}\t{para[1]:.8f}\t{para[2]:.8f}\t{para[3]:.8f}\t{res:.8f}"
+        )
+        return res
 
     def CG_minimize(self):
         para0 = [0.1 for _ in range(8)]

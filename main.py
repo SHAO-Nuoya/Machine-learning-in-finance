@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:19:40
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-12 00:02:36
+LastEditTime: 2022-04-23 14:48:05
 '''
 from single_vasicek import SingleVasicek
 from multiple_vasicek import MultipleVasicek
@@ -19,9 +19,9 @@ import time
 def single_curve_prediction(CI=0.95):
     VS = SingleVasicek()
 
-    ts = np.linspace(0, 1, VS.T+1)[1:-1]
+    ts = np.linspace(0, 1, VS.T + 1)
     observation_index = []
-    prediction_index = range(1, len(ts)+1)
+    prediction_index = range(1, len(ts) - 1)
 
     ts_observation = ts[observation_index]
     ts_prediction = ts[prediction_index]
@@ -72,18 +72,21 @@ def single_curve_prediction(CI=0.95):
                      alpha=0.25,
                      label='95% CI')
     plt.legend()
-    plt.savefig('Single3.png')
+    #plt.savefig('Single3.png')
     plt.show()
 
 
 #*************************Calibration***************************
 def calibrate(curve='single', method='CG'):
+    print(f"Iter\tr\tk\ttheta\tsigma\tloss")
     if curve == 'single':
         Calibration = SingleCalibrate()
         if method == 'CG':
             para = Calibration.CG_minimize()
         elif method == 'adam':
             para = Calibration.adam_minimize()
+        elif method == 'Global':
+            para = Calibration.Global_minimize()
     elif curve == 'multiple':
         Calibration = MultipleCalibrate()
         if method == 'CG':
@@ -97,7 +100,7 @@ if __name__ == '__main__':
     # single_curve_prediction()
 
     start = time.time()
-    calibrate(curve='single')
+    calibrate(curve='single', method='Global')
     end = time.time()
     print("Time used : ", end - start)
 
