@@ -32,8 +32,8 @@ class SingleVasicek:
         """
         k, theta, sigma, r0 = self.k, self.theta, self.sigma, self.r0
         res = [r0]
-        dt = (ts[-1] - ts[0]) / len(ts)
-        for _ in range(1, len(ts)):
+        dt = (ts[-1] - ts[0]) / (len(ts)-1)
+        for _ in range(len(ts)+1):
             r_pre = res[-1]
             r_new = r_pre + k * (
                 theta - r_pre) * dt + sigma * np.random.normal(0, np.sqrt(dt))
@@ -64,8 +64,9 @@ class SingleVasicek:
         """
         res = []
         for i, rt in enumerate(rts):
-            t = i / len(rts)
+            t = i / (len(rts)-1)
             res.append(-self.A(t) - self.B(t) * rt)
+        
         return np.array(res).reshape(-1, 1)
 
     # todo 是否需要更新rs ?
@@ -79,6 +80,7 @@ class SingleVasicek:
             re = -self.A(t) - self.B(t) * (self.r0 * exp(-self.k * t) +
                                            self.theta * (1 - exp(-self.k * t)))
             res.append(re)
+        
         return np.array(res).reshape(-1, 1)
 
     def c(self, s, t):

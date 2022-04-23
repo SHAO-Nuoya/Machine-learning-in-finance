@@ -19,9 +19,9 @@ import time
 def single_curve_prediction(CI=0.95):
     VS = SingleVasicek()
 
-    ts = np.linspace(0, 1, VS.T)[1:-1]
+    ts = np.linspace(0, 1, VS.T+1)[1:-1]
     observation_index = []
-    prediction_index = range(len(ts))
+    prediction_index = range(1, len(ts)+1)
 
     ts_observation = ts[observation_index]
     ts_prediction = ts[prediction_index]

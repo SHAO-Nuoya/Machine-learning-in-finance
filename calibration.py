@@ -16,7 +16,7 @@ import numpy as np
 class SingleCalibrate:
     def __init__(self) -> None:
         simulated_VS = SingleVasicek(r0=0.5, k=2, theta=0.1, sigma=0.2)
-        self.ts = np.linspace(0, 1, simulated_VS.T)[1:-1]
+        self.ts = np.linspace(0, 1, simulated_VS.T+1)[1:-1]
         rs = simulated_VS.generate_rt(self.ts)
         self.y = simulated_VS.Log_Pt(rs)
 
