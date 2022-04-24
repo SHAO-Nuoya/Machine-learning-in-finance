@@ -17,9 +17,9 @@ import matplotlib.pyplot as plt
 class SingleCalibrate:
     def __init__(self) -> None:
         simulated_VS = SingleVasicek(r0=0.5, k=2, theta=0.1, sigma=0.2)
-        self.ts = np.linspace(0, 1, simulated_VS.T + 1)[:-1]
+        self.ts = np.linspace(0, 1, simulated_VS.T + 1)
         rs = simulated_VS.generate_rt(self.ts)
-        self.y = simulated_VS.Log_Pt(rs[1:])
+        self.y = simulated_VS.Log_Pt(rs)[1:-1]
         self.iter = 0
 
     def minus_marginal_liklihood(self, para):
@@ -27,8 +27,8 @@ class SingleCalibrate:
         r0, k, theta, sigma = para
         VS = SingleVasicek(r0, k, theta, sigma)
 
-        mu_y = VS.mu(self.ts[1:])
-        SigmaYY = VS.Sigma(self.ts[1:], self.ts[1:])
+        mu_y = VS.mu(self.ts)[1:-1]
+        SigmaYY = VS.Sigma(self.ts, self.ts)[1:-1,1:-1]
 
         # rs = VS.generate_rt(self.ts)
         # y = VS.Log_Pt(rs)
@@ -73,7 +73,7 @@ class SingleCalibrate:
         return res
 
     def CG_minimize(self):
-        para = [1, 1, 1, 1]
+        para = [0.5, 2, 0.1, 0.2]
         res = minimize(self.minus_marginal_liklihood,
                        para,
                        method='CG',
