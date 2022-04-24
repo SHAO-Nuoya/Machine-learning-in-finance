@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:19:40
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-23 14:48:05
+LastEditTime: 2022-04-23 18:16:58
 '''
 from single_vasicek import SingleVasicek
 from multiple_vasicek import MultipleVasicek
@@ -93,16 +93,38 @@ def calibrate(curve='single', method='CG'):
             para = Calibration.CG_minimize()
         elif method == 'adam':
             para = Calibration.adam_minimize()
-    print(para)
+
+    re = para.x
+    print(re)
+    return re
 
 
 if __name__ == '__main__':
     # single_curve_prediction()
 
-    start = time.time()
-    calibrate(curve='single', method='Global')
-    end = time.time()
-    print("Time used : ", end - start)
+    res = {'r': [], 'k': [], 'theta': [], 'sigma': []}
+    for i in range(20):
+        r, k, t, s = calibrate(curve='single', method='Global')
+        res['r'].append(r)
+        res['k'].append(k)
+        res['theta'].append(t)
+        res['sigma'].append(s)
+
+    plt.figure(figsize=(20,20))
+    plt.subplot(2,2,1)
+    plt.hist(res['r'])
+    plt.subplot(2,2,2)
+    plt.hist(res['k'])
+    plt.subplot(2,2,3)
+    plt.hist(res['theta'])
+    plt.subplot(2,2,4)
+    plt.hist(res['sigma'])
+    plt.show()
+
+    # start = time.time()
+    # calibrate(curve='single', method='Global')
+    # end = time.time()
+    # print("Time used : ", end - start)
 
     # # start = time.time()
     # # calibrate(curve='multiple')

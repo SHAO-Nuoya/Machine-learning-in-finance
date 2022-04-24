@@ -4,10 +4,13 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 16:11:50
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-23 14:14:24
+LastEditTime: 2022-04-23 18:13:36
 '''
 from numpy import exp
 import numpy as np
+from datetime import datetime
+
+np.random.seed(int(datetime.now().timestamp()))
 
 
 class SingleVasicek:
@@ -32,7 +35,7 @@ class SingleVasicek:
         """
         k, theta, sigma, r0 = self.k, self.theta, self.sigma, self.r0
         res = [r0]
-        dt = (ts[-1] - ts[0]) / (len(ts)-1)
+        dt = (ts[-1] - ts[0]) / (len(ts) - 1)
         for _ in range(1, len(ts)):
             r_pre = res[-1]
             r_new = r_pre + k * (
@@ -64,9 +67,9 @@ class SingleVasicek:
         """
         res = []
         for i, rt in enumerate(rts):
-            t = i / (len(rts)-1)
+            t = i / (len(rts) - 1)
             res.append(-self.A(t) - self.B(t) * rt)
-        
+
         return np.array(res).reshape(-1, 1)
 
     # todo 是否需要更新rs ?
@@ -80,7 +83,7 @@ class SingleVasicek:
             re = -self.A(t) - self.B(t) * (self.r0 * exp(-self.k * t) +
                                            self.theta * (1 - exp(-self.k * t)))
             res.append(re)
-        
+
         return np.array(res).reshape(-1, 1)
 
     def c(self, s, t):

@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:03:06
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-23 16:39:30
+LastEditTime: 2022-04-24 02:44:42
 '''
 import tensorflow as tf
 from scipy.optimize import minimize, shgo
@@ -16,9 +16,9 @@ import numpy as np
 class SingleCalibrate:
     def __init__(self) -> None:
         simulated_VS = SingleVasicek(r0=0.5, k=2, theta=0.1, sigma=0.2)
-        self.ts = np.linspace(0, 1, simulated_VS.T + 1)[1:-1]
+        self.ts = np.linspace(0, 1, simulated_VS.T + 1)[:-1]
         rs = simulated_VS.generate_rt(self.ts)
-        self.y = simulated_VS.Log_Pt(rs)
+        self.y = simulated_VS.Log_Pt(rs[1:])
         self.iter = 0
 
     def minus_marginal_liklihood(self, para):
@@ -26,9 +26,12 @@ class SingleCalibrate:
         r0, k, theta, sigma = para
         VS = SingleVasicek(r0, k, theta, sigma)
 
-        mu_y = VS.mu(self.ts)
-        SigmaYY = VS.Sigma(self.ts, self.ts)
+        mu_y = VS.mu(self.ts[1:])
+        SigmaYY = VS.Sigma(self.ts[1:], self.ts[1:])
 
+        # rs = VS.generate_rt(self.ts)
+        # y = VS.Log_Pt(rs)
+        # res = -(y - mu_y).T @ np.linalg.inv(SigmaYY) @ (y - mu_y) / 2
         res = -(self.y - mu_y).T @ np.linalg.inv(SigmaYY) @ (self.y - mu_y) / 2
         res = -res[0][0]
         print(
@@ -37,7 +40,7 @@ class SingleCalibrate:
         return res
 
     def Global_minimize(self):
-        bounds = [(0, 1), (1, 3), (0, 1), (0, 0.1)]
+        bounds = [(0, 1), (1, 3), (0, 0.5), (0, 0.5)]
         epsilon = 0.1
         cons = (
             {
@@ -60,8 +63,9 @@ class SingleCalibrate:
         res = shgo(self.minus_marginal_liklihood,
                    bounds=bounds,
                    options={'disp': True},
-                   n=10,
-                   constraints=cons)
+                   n=2**6,
+                   constraints=cons,
+                   sampling_method='sobol')
         return res
 
     def CG_minimize(self):
