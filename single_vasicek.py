@@ -4,7 +4,7 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-14 16:11:50
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-23 18:13:36
+LastEditTime: 2022-04-24 03:47:46
 '''
 from numpy import exp
 import numpy as np
@@ -47,9 +47,12 @@ class SingleVasicek:
     def A(self, t):
         k, theta, sigma = self.k, self.theta, self.sigma
         tau = 1 - t
-        res = theta / k * (exp(-k * tau) + k * tau - 1) + sigma**2 / (
-            4 * k**3) * (exp(-2 * k * tau) - 4 * exp(-k * tau) - 2 * k * tau +
-                         3)
+        # res = theta / k * (exp(-k * tau) + k * tau - 1) + sigma**2 / (
+        #     4 * k**3) * (exp(-2 * k * tau) - 4 * exp(-k * tau) - 2 * k * tau +
+        #                  3)
+
+        res = (theta - sigma**2 /
+               (2 * k**2)) * (self.B(t) - tau) - sigma**2 * self.B(t) / (4 * k)
         return res
 
     def B(self, t):
@@ -80,8 +83,8 @@ class SingleVasicek:
         """expectation of log P(t, T)"""
         res = []
         for t in ts:
-            re = -self.A(t) - self.B(t) * (self.r0 * exp(-self.k * t) +
-                                           self.theta * (1 - exp(-self.k * t)))
+            re = self.A(t) - self.B(t) * (self.r0 * exp(-self.k * t) +
+                                          self.theta * (1 - exp(-self.k * t)))
             res.append(re)
 
         return np.array(res).reshape(-1, 1)
@@ -92,10 +95,14 @@ class SingleVasicek:
         Bs = self.B(s)
         Bt = self.B(t)
 
-        term1 = exp(-k * (s + t))
+        # term1 = exp(-k * (s + t))
+        # term2 = exp(2 * k * min(s, t)) - 1
+        term1 = exp(-k * (2 + s + t)) / (2 * k**3)
         term2 = exp(2 * k * min(s, t)) - 1
+        term3 = (exp(k) - exp(k * s)) * (exp(k) - exp(k * t)) * sigma**2
 
-        return Bs * Bt * sigma**2 / (2 * k) * term1 * term2
+        # return Bs * Bt * sigma**2 / (2 * k) * term1 * term2
+        return term1 * term2 * term3
 
     def Sigma(self, Ss, Ts, sigma_hat=0):
         """

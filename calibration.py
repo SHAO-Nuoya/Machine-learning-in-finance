@@ -4,13 +4,14 @@ Version: 1.0
 Author: SHAO Nuoya
 Date: 2022-03-16 00:03:06
 LastEditors: SHAO Nuoya
-LastEditTime: 2022-04-24 02:44:42
+LastEditTime: 2022-04-24 13:00:35
 '''
 import tensorflow as tf
 from scipy.optimize import minimize, shgo
 from single_vasicek import SingleVasicek
 from multiple_vasicek import MultipleVasicek
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class SingleCalibrate:
@@ -32,7 +33,8 @@ class SingleCalibrate:
         # rs = VS.generate_rt(self.ts)
         # y = VS.Log_Pt(rs)
         # res = -(y - mu_y).T @ np.linalg.inv(SigmaYY) @ (y - mu_y) / 2
-        res = -(self.y - mu_y).T @ np.linalg.inv(SigmaYY) @ (self.y - mu_y) / 2
+        res = -np.log(np.linalg.norm(SigmaYY, ord=1)) / 2 - (
+            self.y - mu_y).T @ np.linalg.inv(SigmaYY) @ (self.y - mu_y) / 2
         res = -res[0][0]
         print(
             f"{self.iter}\t{para[0]:.8f}\t{para[1]:.8f}\t{para[2]:.8f}\t{para[3]:.8f}\t{res:.8f}"
@@ -60,20 +62,25 @@ class SingleCalibrate:
                 'fun': lambda x: x[3] - epsilon
             },
         )
-        res = shgo(self.minus_marginal_liklihood,
-                   bounds=bounds,
-                   options={'disp': True},
-                   n=2**6,
-                   constraints=cons,
-                   sampling_method='sobol')
+        res = shgo(
+            self.minus_marginal_liklihood,
+            bounds=bounds,
+            options={'disp': True},
+            #    minimizer_kwargs={'method': 'CG'},
+            n=2**6,
+            constraints=cons,
+            sampling_method='sobol')
         return res
 
     def CG_minimize(self):
-        para = [0.5 for _ in range(4)]
+        para = [1, 1, 1, 1]
         res = minimize(self.minus_marginal_liklihood,
                        para,
                        method='CG',
-                       options={'disp': True})
+                       options={
+                           'disp': True,
+                           'eps': 0.01
+                       })
         return res
 
     def adam_minimize(self):
